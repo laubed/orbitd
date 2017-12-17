@@ -1,0 +1,6 @@
+orbitd.db
+orbitd.db-journal
+
+venv/
+
+.idea/
