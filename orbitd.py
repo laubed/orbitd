@@ -7,14 +7,8 @@ import socket
 import sys
 import socketserver
 import subprocess
+import cmd
 
-class PackageManager(object):
-    def ensurePackage(self, pkgname):
-        pass
-
-class APTPackageManager(PackageManager):
-    def ensurePackage(self, pkgname):
-        return subprocess.call(["apt-get", "install", "--quiet", "-y", pkgname])
 
 class Orbit(object):
     def __init__(self):
@@ -28,25 +22,46 @@ class Orbit(object):
     def get_device_uuid(self):
         return self.kv.get("local/device_uuid")
 
-
-class OrbitServerRequestHandler(socketserver.BaseRequestHandler):
-    def handle(self):
-        # self.request is the TCP socket connected to the client
-        self.data = self.request.recv(1024).strip()
-        print("{} wrote:".format(self.client_address[0]))
-        print(self.data)
-        # just send back the same data, but upper-cased
-        self.request.sendall(self.data.upper())
-        print(self.server.kv.get("local/device_uuid"))
-
-class OrbitServer(Orbit, socketserver.TCPServer):
-    def __init__(self):
-        Orbit.__init__(self)
-        socketserver.TCPServer.__init__(self, ("", 3302), OrbitServerRequestHandler)
+    def get_root(self):
+        return self.kv.get("global/orbit_root")
 
 
+#class OrbitServerRequestHandler(socketserver.BaseRequestHandler):
+#    def handle(self):
+#        # self.request is the TCP socket connected to the client
+#        self.data = self.request.recv(1024).strip()
+#        print("{} wrote:".format(self.client_address[0]))
+#        print(self.data)
+#        # just send back the same data, but upper-cased
+#        self.request.sendall(self.data.upper())
+#        print(self.server.kv.get("local/device_uuid"))
 
 
-o = OrbitServer()
-o.serve_forever()
+#class OrbitServer(Orbit, socketserver.TCPServer):
+#    def __init__(self):
+#        Orbit.__init__(self)
+#        socketserver.TCPServer.__init__(self, ("", 3302), OrbitServerRequestHandler)
 
+
+#o = OrbitServer()
+#o.serve_forever()
+
+
+class OrbitShell(cmd.Cmd):
+    intro = "Welcome to orbitd shell. See help for all commands available"
+    prompt = "> "
+    orbit = Orbit()
+
+    def do_getUUID(self, arg):
+        print(self.orbit.get_device_uuid())
+
+    def do_getRoot(self, arg):
+        print(self.orbit.get_root())
+
+    def do_exit(self,arg):
+        sys.exit(0)
+
+
+if __name__ == '__main__':
+    if( len(sys.argv) == 2 and sys.argv[1] == "shell"):
+        OrbitShell().cmdloop()
